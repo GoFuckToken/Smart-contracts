@@ -111,12 +111,10 @@ contract AuthenticationManager {
     /* Adds a user to our list of admins */
     function addAdmin(address _address) {
         /* Ensure we're an admin */
-        if (!isCurrentAdmin(msg.sender))
-            throw;
+        assert(!isCurrentAdmin(msg.sender));
 
         // Fail if this account is already admin
-        if (adminAddresses[_address])
-            throw;
+            assert(adminAddresses[_address]);
         
         // Add the user
         adminAddresses[_address] = true;
@@ -128,16 +126,16 @@ contract AuthenticationManager {
     /* Removes a user from our list of admins but keeps them in the history audit */
     function removeAdmin(address _address) {
         /* Ensure we're an admin */
-        if (!isCurrentAdmin(msg.sender))
-            throw;
+        
+            assert(!isCurrentAdmin(msg.sender));
 
         /* Don't allow removal of self */
-        if (_address == msg.sender)
-            throw;
+
+            assert(_address == msg.sender);
 
         // Fail if this account is already non-admin
-        if (!adminAddresses[_address])
-            throw;
+
+            assert(!adminAddresses[_address]);
 
         /* Remove this admin user */
         adminAddresses[_address] = false;
@@ -147,12 +145,12 @@ contract AuthenticationManager {
     /* Adds a user/contract to our list of account readers */
     function addAccountReader(address _address) {
         /* Ensure we're an admin */
-        if (!isCurrentAdmin(msg.sender))
-            throw;
+        
+            assert(!isCurrentAdmin(msg.sender));
 
         // Fail if this account is already in the list
-        if (accountReaderAddresses[_address])
-            throw;
+
+            assert(accountReaderAddresses[_address]);
         
         // Add the user
         accountReaderAddresses[_address] = true;
@@ -164,12 +162,12 @@ contract AuthenticationManager {
     /* Removes a user/contracts from our list of account readers but keeps them in the history audit */
     function removeAccountReader(address _address) {
         /* Ensure we're an admin */
-        if (!isCurrentAdmin(msg.sender))
-            throw;
+
+            assert(!isCurrentAdmin(msg.sender));
 
         // Fail if this account is already not in the list
-        if (!accountReaderAddresses[_address])
-            throw;
+
+            assert(!accountReaderAddresses[_address]);
 
         /* Remove this admin user */
         accountReaderAddresses[_address] = false;
@@ -245,18 +243,18 @@ contract XWinToken {
 
     /* This modifier allows a method to only be called by account readers */
     modifier accountReaderOnly {
-        if (!authenticationManager.isCurrentAccountReader(msg.sender)) throw;
+     assert(!authenticationManager.isCurrentAccountReader(msg.sender));
         _;
     }
 
     modifier fundSendablePhase {
         // If it's in ICO phase, forbid it
         //if (icoPhaseManagement.icoPhase())
-        //    throw;
+        //    assert();
 
         // If it's abandoned, forbid it
-        if (icoPhaseManagement.icoAbandoned())
-            throw;
+
+            assert(icoPhaseManagement.icoAbandoned());
 
         // We're good, funds can now be transferred
         _;
@@ -280,7 +278,7 @@ contract XWinToken {
     }
 
     /* Returns the total number of holders of this currency. */
-    function tokenHolderCount()  constant returns (uint256) {
+    function tokenHolderCount2()  constant returns (uint256) {
         return allTokenHolders.length;
     }
 
@@ -376,8 +374,8 @@ contract XWinToken {
     /* Mint new tokens - this can only be done by special callers (i.e. the ICO management) during the ICO phase. */
     function mintTokens(address _address, uint256 _amount) onlyPayloadSize(2) {
         /* Ensure we are the ICO contract calling */
-        if (msg.sender != icoContractAddress || !icoPhaseManagement.icoPhase())
-            throw;
+
+            assert(msg.sender != icoContractAddress || !icoPhaseManagement.icoPhase());
 
         /* Mint the tokens for the new address*/
         bool isNew = balances[_address] == 0;
@@ -406,13 +404,13 @@ contract IcoPhaseManagement {
     uint256 public icoUnitPrice = 3 finney;
     
     /* Main wallet for collecting ethers*/
-    address mainWallet="0x20ce46Bce85BFf0CA13b02401164D96B3806f56e";
+    address mainWallet = 0x20ce46Bce85BFf0CA13b02401164D96B3806f56e;
     
     // contract manager address
-    address manager = "0xE3ff0BA0C6E7673f46C7c94A5155b4CA84a5bE0C";
+    address manager = 0xE3ff0BA0C6E7673f46C7c94A5155b4CA84a5bE0C;
     /* Wallets wor reserved tokens */
-    address reservedWallet1 = "0x43Ceb8b8f755518e325898d95F3912aF16b6110C";
-    address reservedWallet2 = "0x11F386d6c7950369E8Da56F401d1727cf131816D";
+    address reservedWallet1 = 0x43Ceb8b8f755518e325898d95F3912aF16b6110C;
+    address reservedWallet2 = 0x11F386d6c7950369E8Da56F401d1727cf131816D;
     // flag - reserved tokens already distributed (can be distributed only once)
     bool public reservedTokensDistributed;
 
@@ -440,19 +438,19 @@ contract IcoPhaseManagement {
     /* Ensures that once the ICO is over this contract cannot be used until the point it is destructed. */
     modifier onlyDuringIco {
         bool contractValid = xwinContractDefined && !xWinToken.isClosed();
-        if (!contractValid || (!icoPhase && !icoAbandoned)) throw;
+        assert(!contractValid || (!icoPhase && !icoAbandoned));
         _;
     }
 
     /* This code can be executed only after ICO */
     modifier onlyAfterIco {
-        if ( icoEndTime  > now) throw;
+        assert(icoEndTime  > now);
         _;
     }
 
     /* This modifier allows a method to only be called by current admins */
     modifier adminOnly {
-        if (!authenticationManager.isCurrentAdmin(msg.sender)) throw;
+        assert(!authenticationManager.isCurrentAdmin(msg.sender));
         _;
     }
     
@@ -476,8 +474,8 @@ contract IcoPhaseManagement {
        other functionality can be used until this is set. */
     function setXWinContractAddress(address _xwinContractAddress) adminOnly {
         /* This can only happen once in the lifetime of this contract */
-        if (xwinContractDefined)
-            throw;
+
+            assert(xwinContractDefined);
 
         /* Setup access to our other contracts and validate their versions */
         xWinToken = XWinToken(_xwinContractAddress);
@@ -492,8 +490,8 @@ contract IcoPhaseManagement {
     /* Close the ICO phase and transition to execution phase */
     function close() managerOnly onlyDuringIco {
         // Forbid closing contract before the end of ICO
-        if (now <= icoEndTime)
-            throw;
+
+            assert(now <= icoEndTime);
 
         // Close the ICO
         icoPhase = false;
@@ -501,7 +499,7 @@ contract IcoPhaseManagement {
 
         // Withdraw funds to the caller
         // if (!msg.sender.send(this.balance))
-        //    throw;
+        //    assert();
     }
     
     /* Sending reserved tokens (20% from all tokens was reserved in preICO) */
@@ -519,8 +517,8 @@ contract IcoPhaseManagement {
     /* Handle receiving ether in ICO phase - we work out how much the user has bought, allocate a suitable balance and send their change */
     function () onlyDuringIco payable {
         // Forbid funding outside of ICO
-        if (now < icoStartTime || now > icoEndTime)
-            throw;
+
+            assert(now < icoStartTime || now > icoEndTime);
 
         /* Determine how much they've actually purhcased and any ether change */
         //uint256 tokensPurchased = msg.value.div(icoUnitPrice);
@@ -531,10 +529,10 @@ contract IcoPhaseManagement {
         //if (tokensPurchased > 0)
         xWinToken.mintTokens(msg.sender, msg.value.mul(100000000).div(icoUnitPrice));
 
-        mainWallet.send(msg.value);
+        mainWallet.transfer(msg.value);
         /* Send change back to recipient */
         /*if (change > 0 && !msg.sender.send(change))
-            throw;*/
+            assert();*/
     }
     
 }
@@ -563,18 +561,17 @@ contract DividendManager {
     /* Makes a dividend payment - we make it available to all senders then send the change back to the caller.  We don't actually send the payments to everyone to reduce gas cost and also to 
        prevent potentially getting into a situation where we have recipients throwing causing dividend failures and having to consolidate their dividends in a separate process. */
     function () payable {
-        if (xwinContract.isClosed())
-            throw;
+            assert(xwinContract.isClosed());
 
         /* Determine how much to pay each shareholder. */
         uint256 validSupply = xwinContract.totalSupply();
         uint256 paymentPerShare = msg.value.div(validSupply);
-        if (paymentPerShare == 0)
-            throw;
+
+            assert(paymentPerShare == 0);
 
         /* Enum all accounts and send them payment */
         uint256 totalPaidOut = 0;
-        for (uint256 i = 0; i < xwinContract.tokenHolderCount(); i++) {
+        for (uint256 i = 0; i < xwinContract.tokenHolderCount2(); i++) {
             address addr = xwinContract.tokenHolder(i);
             uint256 dividend = paymentPerShare * xwinContract.balanceOf(addr);
             dividends[addr] = dividends[addr].add(dividend);
@@ -596,16 +593,16 @@ contract DividendManager {
     /* Allows a user to request a withdrawal of their dividend in full. */
     function withdrawDividend() {
         // Ensure we have dividends available
-        if (dividends[msg.sender] == 0)
-            throw;
+
+            assert(dividends[msg.sender] == 0);
         
         // Determine how much we're sending and reset the count
         uint256 dividend = dividends[msg.sender];
         dividends[msg.sender] = 0;
 
         // Attempt to withdraw
-        if (!msg.sender.send(dividend))
-            throw;
+
+            assert(!msg.sender.send(dividend));
     }
 }
 
@@ -616,7 +613,7 @@ contract DividendManager {
  */
 contract XWinAssociation {
     
-    address public manager = "0xE3ff0BA0C6E7673f46C7c94A5155b4CA84a5bE0C";
+    address public manager = 0xE3ff0BA0C6E7673f46C7c94A5155b4CA84a5bE0C;
 
     uint public changeManagerQuorum = 80; // in % of tokens
     
@@ -675,7 +672,7 @@ contract XWinAssociation {
     function transferEthers(address receiver, uint valueInWei) onlyManager {
         uint value = valueInWei;
         require ( this.balance > value);
-        receiver.send(value);
+        receiver.transfer(value);
     }
     
     function () payable {
@@ -767,7 +764,7 @@ contract XWinAssociation {
                 yea += voteWeight;
         }
 
-        if ( yea > changeManagerQuorum * 10**sharesTokenAddress.decimals() ) {
+        if ( yea > changeManagerQuorum * sharesTokenAddress.tokenHolderCount2() ) {
             // Proposal passed; execute the transaction
 
             manager = newManager;
@@ -849,7 +846,7 @@ contract XWinBet {
     function executeBet (uint betId, bool win) 
     {
         
-        Bet b = bets[betId];
+        Bet storage b = bets[betId];
         require (now > b.deadline);
         require (!b.executed);
         require (msg.sender == b.bettor);
